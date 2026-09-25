@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-      /* ลบ table-layout: fixed ทิ้ง แล้วใช้ auto เพื่อให้ตัวอักษรไม่โดนตัด */
+/* ลบ table-layout: fixed ทิ้ง แล้วใช้ auto เพื่อให้ตัวอักษรไม่โดนตัด */
 .html2pdf-pdf-mode table {
     table-layout: auto !important;
 }
@@ -169,7 +169,7 @@
     <nav class="no-print bg-white border-b sticky top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 flex flex-wrap justify-between items-center">
             <div class="flex items-center py-3">
-                <img src="<?= getLogoBase64() ?>" alt="Logo สกร." class="h-10 mr-3 object-contain">
+                <img src="https://img2.pic.in.th/751fbc5f60625bbaf98c4b5834e75912.png" crossorigin="anonymous" alt="Logo สกร." class="h-10 mr-3 object-contain">
                 <span class="text-xl md:text-2xl font-bold text-purple-formal">ระบบบันทึกผลการพัฒนาคุณภาพผู้เรียน <span class="text-yellow-500">(E-สกร4)</span></span>
             </div>
             <div class="flex flex-wrap space-x-1">
@@ -186,7 +186,7 @@
             
             <section id="tab-cover" class="tab-content">
                 <div class="text-center mb-6">
-                    <img src="<?= getLogoBase64() ?>" alt="Logo สกร." class="h-28 mx-auto mb-4">
+                    <img src="https://img2.pic.in.th/751fbc5f60625bbaf98c4b5834e75912.png" crossorigin="anonymous" alt="Logo สกร." class="h-28 mx-auto mb-4">
                     <h1 class="text-2xl font-bold mb-2">เอกสารบันทึกผลการพัฒนาคุณภาพผู้เรียน</h1>
                     
                     <select class="text-lg font-semibold border-none text-center bg-gray-50 p-2 mb-2 w-full max-w-2xl">
@@ -950,7 +950,7 @@
             syncInputValuesForPrint();
             replaceInputsForPrint(); 
             
-            const overflowDivs = document.querySelectorAll('.print-overflow-visible');
+            const overflowDivs = document.querySelector('#capture-area').querySelectorAll('.overflow-x-auto');
             overflowDivs.forEach(div => {
                 div.classList.remove('overflow-x-auto');
                 div.style.overflow = 'visible';
