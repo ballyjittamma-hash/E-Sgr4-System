@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกผลการพัฒนาคุณภาพผู้เรียน (E-สกร4)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+      /* ลบ table-layout: fixed ทิ้ง แล้วใช้ auto เพื่อให้ตัวอักษรไม่โดนตัด */
+.html2pdf-pdf-mode table {
+    table-layout: auto !important;
+}
+
+/* ซ่อนปุ่มแบบนิ่งสนิทโดยไม่ทำให้โครงสร้างเว็บกระตุก */
+.html2pdf-pdf-mode .no-print, 
+.html2pdf-pdf-mode button {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .text-purple-formal { color: #4C1D95; }
+
+        @media print {
+            @page { 
+                size: A4; 
+                margin: 5mm; 
+            }
+            body { 
+                background-color: white; 
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                display: block;
+            }
+            
+            .no-print, .hidden { display: none !important; } 
+            
+            .print-container {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            input, select {
+                border: none !important;
+                background: transparent !important;
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                color: black !important;
+                padding: 0 !important;
+            }
+            input::placeholder { color: transparent !important; }
+            
+            table { 
+                width: 100%; 
+                border-collapse: collapse;
+                page-break-inside: auto;
+            }
+            thead { display: table-header-group; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+
+            th, td { padding: 2px !important; font-size: 9pt !important; }
+            .text-[10px] th { font-size: 7.5pt !important; }
+            .text-[12px] th { font-size: 8.5pt !important; }
+            
+            #attendance-table th, #attendance-table td {
+                font-size: 7pt !important;
+                padding: 1px !important;
+            }
+            .attendance-max-hour {
+                font-size: 7pt !important;
+                width: 100% !important;
+                text-align: center !important;
+                -moz-appearance: textfield; 
+            }
+            .attendance-max-hour::-webkit-outer-spin-button,
+            .attendance-max-hour::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            #tab-cover img { height: 85px !important; margin-bottom: 5px !important; }
+            .mb-6 { margin-bottom: 8px !important; }
+        }
+
+        input[type="text"], input[type="number"]:not(.attendance-max-hour), select {
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 2px 4px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus { border-color: #6B21A8; }
+        input.header-input { border: none; border-bottom: 1px dotted #94a3b8; border-radius: 0; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+        th, td { border: 1px solid #475569; padding: 4px 4px; text-align: center; font-size: 13px; }
+        th { background-color: #f1f5f9; font-weight: 600; }
+        
+        .header-cell { border: none !important; background-color: white !important; padding: 10px 0 !important; }
+        .tab-btn.active { background-color: #6B21A8; color: white; border-bottom: 4px solid #FACC15; }
+        
+        /* แก้ไข CSS ให้ปลอดภัยตอนโหลด PDF และป้องกันการตัดขอบ */
+        .html2pdf-pdf-mode, .html2pdf-pdf-mode body, .html2pdf-pdf-mode main {
+            background-color: white !important;
+            width: auto !important;
+            max-width: none !important;
+            overflow-x: hidden !important;
+        }
+
+        .html2pdf-pdf-mode * {
+            letter-spacing: 0 !important;
+            word-spacing: 0 !important;
+        }
+
+        .html2pdf-pdf-mode #capture-area {
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 20px !important;
+        }
+
+        .html2pdf-pdf-mode tr { page-break-inside: avoid !important; }
+        .html2pdf-pdf-mode th, .html2pdf-pdf-mode td {
+            white-space: nowrap !important;
+            word-break: normal !important;
+        }
+        .html2pdf-pdf-mode .name-column { white-space: normal !important; }
+
+        .html2pdf-pdf-mode input[type="text"], 
+        .html2pdf-pdf-mode input[type="number"], 
+        .html2pdf-pdf-mode select {
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            color: #000 !important;
+        }
+
+        .html2pdf-pdf-mode select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .attendance-max-hour { -moz-appearance: textfield; }
+        .attendance-max-hour::-webkit-outer-spin-button,
+        .attendance-max-hour::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="no-print bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 flex flex-wrap justify-between items-center">
+            <div class="flex items-center py-3">
+                <img src="<?= getLogoBase64() ?>" alt="Logo สกร." class="h-10 mr-3 object-contain">
+                <span class="text-xl md:text-2xl font-bold text-purple-formal">ระบบบันทึกผลการพัฒนาคุณภาพผู้เรียน <span class="text-yellow-500">(E-สกร4)</span></span>
+            </div>
+            <div class="flex flex-wrap space-x-1">
+                <button onclick="showTab('cover')" id="btn-cover" class="tab-btn active px-3 py-4 font-medium transition text-sm">1. บันทึกหน้าปก</button>
+                <button onclick="showTab('attendance')" id="btn-attendance" class="tab-btn px-3 py-4 font-medium transition text-sm">2. เวลาพบกลุ่ม</button>
+                <button onclick="showTab('grades')" id="btn-grades" class="tab-btn px-3 py-4 font-medium transition text-sm">3. บันทึกผลการเรียน</button>
+                <button onclick="showTab('morals')" id="btn-morals" class="tab-btn px-3 py-4 font-medium transition text-sm">4. ประเมินคุณธรรม</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 relative">
+        <div class="max-w-[1050px] mx-auto my-8 bg-white shadow-2xl rounded-lg p-8 print-container" id="capture-area">
+            
+            <section id="tab-cover" class="tab-content">
+                <div class="text-center mb-6">
+                    <img src="<?= getLogoBase64() ?>" alt="Logo สกร." class="h-28 mx-auto mb-4">
+                    <h1 class="text-2xl font-bold mb-2">เอกสารบันทึกผลการพัฒนาคุณภาพผู้เรียน</h1>
+                    
+                    <select class="text-lg font-semibold border-none text-center bg-gray-50 p-2 mb-2 w-full max-w-2xl">
+                        <option>หลักสูตรการศึกษานอกระบบ ระดับการศึกษาขั้นพื้นฐาน พุทธศักราช 2551</option>
+                        <option>หลักสูตรส่งเสริมการเรียนรู้เพื่อคุณวุฒิตามระดับ พุทธศักราช 2567</option>
+                    </select>
+
+                    <h2 class="text-xl font-bold mt-2 mb-6">ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอสุวรรณคูหา</h2>
+                </div>
+
+                <div class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 mb-6 text-[15px]">
+                    <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 w-full">
+                        <div class="flex items-center space-x-2 whitespace-nowrap">
+                            <span class="font-bold">ระดับ:</span>
+                            <select class="header-input text-center w-36">
+                                <option>ประถมศึกษา</option>
+                                <option>มัธยมศึกษาตอนต้น</option>
+                                <option>มัธยมศึกษาตอนปลาย</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-2 whitespace-nowrap">
+                            <span class="font-bold">ภาคเรียนที่:</span>
+                            <input type="text" class="header-input text-center w-20" placeholder="ระบุ">
+                        </div>
+                        <div class="flex items-center space-x-2 whitespace-nowrap">
+                            <span class="font-bold">ปีการศึกษา:</span>
+                            <input type="text" class="header-input text-center w-24" placeholder="ระบุ">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 w-full">
+                        <div class="flex items-center space-x-2 whitespace-nowrap">
+                            <span class="font-bold">ชื่อกลุ่ม:</span>
+                            <select class="header-input text-center w-72" id="group-select"></select>
+                        </div>
+                        <div class="flex items-center space-x-2 whitespace-nowrap">
+                            <span class="font-bold">ตำบล:</span>
+                            <select class="header-input text-center w-36">
+                                <option>กุดผึ้ง</option><option>ดงมะไฟ</option><option>นาด่าน</option><option>นาดี</option>
+                                <option>นาสี</option><option>บ้านโคก</option><option>บุญทัน</option><option>สุวรรณคูหา</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-center mb-6 font-medium">อำเภอสุวรรณคูหา จังหวัดหนองบัวลำภู</p>
+
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2 no-print">
+                        <h3 class="font-bold border-l-4 border-purple-800 pl-2">ตารางแสดงผลการเรียน</h3>
+                        <button onclick="addSubjectRowCover()" class="bg-purple-700 text-white px-3 py-1 rounded text-xs">+ เพิ่มวิชา</button>
+                    </div>
+                    <div class="overflow-x-auto print-overflow-visible">
+                        <table id="cover-subject-table">
+                            <colgroup>
+                                <col style="width: 25%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col style="width: 5%;">
+                                <col class="no-print" style="width: 5%;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">รหัส-รายวิชา</th>
+                                    <th colspan="2">จำนวนผู้เรียน</th>
+                                    <th colspan="2">สอบ</th>
+                                    <th colspan="8">ระดับผลการเรียน</th>
+                                    <th rowspan="2" class="no-print">แก้ไข</th>
+                                </tr>
+                                <tr class="text-[10px]">
+                                    <th>ช</th><th>ญ</th><th>เข้า</th><th>ขาด</th>
+                                    <th>4</th><th>3.5</th><th>3</th><th>2.5</th><th>2</th><th>1.5</th><th>1</th><th>0</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold border-l-4 border-purple-800 pl-2 mb-2">ตารางแสดงผลการประเมินคุณธรรม</h3>
+                    <table>
+                        <colgroup>
+                            <col style="width: 60%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="text-left w-1/2">กลุ่มคุณธรรม</th>
+                                <th>ดีมาก</th><th>ดี</th><th>พอใช้</th><th>ปรับปรุง</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="text-left">1. กลุ่มคุณธรรมเพื่อการพัฒนาตนเอง</td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td></tr>
+                            <tr><td class="text-left">2. กลุ่มคุณธรรมเพื่อการทำงาน</td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td></tr>
+                            <tr><td class="text-left">3. กลุ่มคุณธรรมเพื่อการพัฒนาการอยู่ร่วมกัน</td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td></tr>
+                            <tr><td class="text-left">4. กลุ่มคุณธรรมเพื่อการพัฒนาประเทศชาติ</td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td><td><input type="number" class="w-full text-center"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="grid grid-cols-2 gap-10 mt-10 text-center text-sm">
+                    <div>
+                        <p class="mb-8">ลงชื่อ..........................................................ครูประจำตำบล</p>
+                        <select id="teacher-select" class="font-medium text-center w-64 border-none border-b border-gray-300"></select>
+                    </div>
+                    <div>
+                        <p class="mb-8">ลงชื่อ..........................................................นายทะเบียน</p>
+                        <select id="registrar-select" class="font-medium text-center w-64 border-none border-b border-gray-300"></select>
+                    </div>
+                </div>
+                <div class="mt-8 text-center text-sm">
+                    <p class="mb-8">ลงชื่อ..........................................................ผู้อนุมัติ</p>
+                    <input type="text" id="approver-name" class="text-center font-bold w-64 mb-1 header-input" placeholder="(พิมพ์ชื่อ-นามสกุล ผู้อนุมัติ)"><br>
+                    <select class="w-full max-w-lg text-center border-none font-medium">
+                        <option>ครูรักษาการในตำแหน่งผู้อำนวยการศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอสุวรรณคูหา</option>
+                        <option>ผู้อำนวยการศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอสุวรรณคูหา</option>
+                    </select>
+                </div>
+
+                <div class="text-center mt-12 no-print flex flex-wrap justify-center gap-4">
+                    <button onclick="customPrint()" class="bg-purple-800 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-purple-900 transition">เปิดหน้าต่างพิมพ์</button>
+                    <button onclick="downloadPDFDirect()" class="bg-amber-500 text-slate-900 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-amber-600 transition">ดาวน์โหลด PDF ลงเครื่อง</button>
+                </div>
+            </section>
+
+            <section id="tab-grades" class="tab-content hidden">
+                <div class="overflow-x-auto print-overflow-visible">
+                    <table id="main-grade-table">
+                        <colgroup>
+                            <col style="width: 4%;">
+                            <col style="width: 25%;">
+                            <col style="width: 6%;">
+                            <col style="width: 6%;">
+                            <col style="width: 6%;">
+                            <col style="width: 6%;">
+                            <col style="width: 6%;">
+                            <col style="width: 6%;">
+                            <col style="width: 7%;">
+                            <col style="width: 7%;">
+                            <col style="width: 7%;">
+                            <col style="width: 6%;">
+                            <col style="width: 8%;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th colspan="13" class="header-cell">
+                                    <h2 class="text-2xl font-bold text-center mb-4 text-purple-formal">การประเมินผลการเรียน</h2>
+                                    <div class="flex justify-between items-center mb-2 px-2 text-sm font-normal">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-bold">สัดส่วน ระหว่าง : ปลาย = </span>
+                                            <input type="text" class="w-16 text-center header-input" placeholder="60:40">
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-bold">วิชา/รหัส:</span>
+                                            <input type="text" class="w-64 header-input" placeholder="ระบุวิชาและรหัสวิชา">
+                                        </div>
+                                    </div>
+                                </th>
+                            </tr>
+                            <tr class="text-[12px]">
+                                <th rowspan="2">ที่</th>
+                                <th rowspan="2">ชื่อ-นามสกุล</th>
+                                <th colspan="6">ระหว่างภาค</th>
+                                <th rowspan="2">รวม<br>ระหว่าง</th>
+                                <th rowspan="2">ปลายภาค</th>
+                                <th rowspan="2">รวม<br>ทั้งสิ้น</th>
+                                <th rowspan="2">เกรด</th>
+                                <th rowspan="2">สอบซ่อม</th>
+                            </tr>
+                            <tr class="text-[10px]">
+                                <th>บันทึก1</th><th>บันทึก2</th><th>งาน/ฝึกหัด</th><th>Portfolio</th><th>โครงงาน</th><th>ย่อย</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 flex space-x-2 no-print">
+                    <button onclick="addNewStudentRowGlobal()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ เพิ่มนักศึกษา</button>
+                    <button onclick="nextSubject()" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">ล้างตารางเพื่อบันทึกวิชาต่อไป</button>
+                </div>
+
+                <div class="text-center mt-12 no-print flex flex-wrap justify-center gap-4">
+                    <button onclick="customPrint()" class="bg-purple-800 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-purple-900 transition">เปิดหน้าต่างพิมพ์</button>
+                    <button onclick="downloadPDFDirect()" class="bg-amber-500 text-slate-900 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-amber-600 transition">ดาวน์โหลด PDF ลงเครื่อง</button>
+                </div>
+            </section>
+
+            <section id="tab-morals" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-center mb-4 text-purple-formal no-print">การประเมินคุณธรรม</h2>
+                <div id="moral-sections-container"></div>
+                
+                <div class="mt-12">
+                    <h3 class="font-bold text-lg mb-4 text-purple-formal border-l-4 border-purple-800 pl-2">ตารางสรุปผลการประเมินคุณธรรมรวมรายบุคคล</h3>
+                    <div class="overflow-x-auto print-overflow-visible">
+                        <table id="moral-summary-table">
+                            <colgroup>
+                                <col style="width: 4%;">
+                                <col style="width: 20%;">
+                                <col style="width: 8%;">
+                                <col style="width: 7%;">
+                                <col style="width: 8%;">
+                                <col style="width: 7%;">
+                                <col style="width: 8%;">
+                                <col style="width: 7%;">
+                                <col style="width: 8%;">
+                                <col style="width: 7%;">
+                                <col style="width: 9%;">
+                                <col style="width: 7%;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">ที่</th>
+                                    <th rowspan="2">ชื่อ-นามสกุล</th>
+                                    <th colspan="2">กลุ่มที่ 1 พัฒนาตนเอง</th>
+                                    <th colspan="2">กลุ่มที่ 2 การทำงาน</th>
+                                    <th colspan="2">กลุ่มที่ 3 การอยู่ร่วมกัน</th>
+                                    <th colspan="2">กลุ่มที่ 4 พัฒนาประเทศ</th>
+                                    <th colspan="2" class="bg-purple-100 text-purple-950 font-bold">สรุปผลการประเมินคุณธรรมรวม</th>
+                                </tr>
+                                <tr class="text-xs">
+                                    <th>ผลประเมิน</th><th>ร้อยละ</th>
+                                    <th>ผลประเมิน</th><th>ร้อยละ</th>
+                                    <th>ผลประเมิน</th><th>ร้อยละ</th>
+                                    <th>ผลประเมิน</th><th>ร้อยละ</th>
+                                    <th class="bg-purple-50">ผลประเมิน</th><th class="bg-purple-50">ร้อยละ</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr class="bg-yellow-50 font-bold">
+                                    <td colspan="2" class="text-right">สรุปผลประเมินเฉลี่ยรวมของห้อง:</td>
+                                    <td id="summary-g1-text">-</td><td id="summary-g1-pct">0%</td>
+                                    <td id="summary-g2-text">-</td><td id="summary-g2-pct">0%</td>
+                                    <td id="summary-g3-text">-</td><td id="summary-g3-pct">0%</td>
+                                    <td id="summary-g4-text">-</td><td id="summary-g4-pct">0%</td>
+                                    <td id="summary-total-text" class="bg-purple-100 text-purple-950">-</td><td id="summary-total-pct" class="bg-purple-100 text-purple-950">0%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="text-center mt-12 no-print flex flex-wrap justify-center gap-4">
+                    <button onclick="customPrint()" class="bg-purple-800 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-purple-900 transition">เปิดหน้าต่างพิมพ์</button>
+                    <button onclick="downloadPDFDirect()" class="bg-amber-500 text-slate-900 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-amber-600 transition">ดาวน์โหลด PDF ลงเครื่อง</button>
+                </div>
+            </section>
+
+            <section id="tab-attendance" class="tab-content hidden">
+                <div class="overflow-x-auto print-overflow-visible">
+                    <table id="attendance-table">
+                        <colgroup>
+                            <col style="width: 3%;"> <col style="width: 17%;"> <col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;">
+                            <col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;">
+                            <col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;">
+                            <col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;">
+                            <col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;"><col style="width: 3%;">
+                            <col style="width: 5%;"> </colgroup>
+                        <thead>
+                            <tr>
+                                <th colspan="28" class="header-cell">
+                                    <h2 class="text-2xl font-bold text-center mb-4 text-purple-formal">บันทึกเวลาการพบกลุ่มนักศึกษา</h2>
+                                    <p class="text-center text-sm font-normal text-gray-600 mb-2 no-print">*ตั้งเวลาเต็ม (ชั่วโมง) ที่หัวตารางด้านล่าง และติ๊กถูก (✓) เพื่อให้ระบบรวมเวลาให้อัตโนมัติ</p>
+                                </th>
+                            </tr>
+                            <tr>
+                                <th rowspan="2">ที่</th>
+                                <th rowspan="2">ชื่อ-นามสกุล</th>
+                                <th colspan="5">
+                                    <select class="w-full bg-transparent border-none font-bold text-center">
+                                        <option>มกราคม</option><option>กุมภาพันธ์</option><option>มีนาคม</option><option>เมษายน</option><option>พฤษภาคม</option><option>มิถุนายน</option><option>กรกฎาคม</option><option>สิงหาคม</option><option>กันยายน</option><option>ตุลาคม</option><option>พฤศจิกายน</option><option>ธันวาคม</option>
+                                    </select>
+                                </th>
+                                <th colspan="5">
+                                    <select class="w-full bg-transparent border-none font-bold text-center">
+                                        <option>กุมภาพันธ์</option><option>มกราคม</option><option>มีนาคม</option><option>เมษายน</option><option>พฤษภาคม</option><option>มิถุนายน</option><option>กรกฎาคม</option><option>สิงหาคม</option><option>กันยายน</option><option>ตุลาคม</option><option>พฤศจิกายน</option><option>ธันวาคม</option>
+                                    </select>
+                                </th>
+                                <th colspan="5">
+                                    <select class="w-full bg-transparent border-none font-bold text-center">
+                                        <option>มีนาคม</option><option>มกราคม</option><option>กุมภาพันธ์</option><option>เมษายน</option><option>พฤษภาคม</option><option>มิถุนายน</option><option>กรกฎาคม</option><option>สิงหาคม</option><option>กันยายน</option><option>ตุลาคม</option><option>พฤศจิกายน</option><option>ธันวาคม</option>
+                                    </select>
+                                </th>
+                                <th colspan="5">
+                                    <select class="w-full bg-transparent border-none font-bold text-center">
+                                        <option>เมษายน</option><option>มกราคม</option><option>กุมภาพันธ์</option><option>มีนาคม</option><option>พฤษภาคม</option><option>มิถุนายน</option><option>กรกฎาคม</option><option>สิงหาคม</option><option>กันยายน</option><option>ตุลาคม</option><option>พฤศจิกายน</option><option>ธันวาคม</option>
+                                    </select>
+                                </th>
+                                <th colspan="5">
+                                    <select class="w-full bg-transparent border-none font-bold text-center">
+                                        <option>พฤษภาคม</option><option>มกราคม</option><option>กุมภาพันธ์</option><option>มีนาคม</option><option>เมษายน</option><option>มิถุนายน</option><option>กรกฎาคม</option><option>สิงหาคม</option><option>กันยายน</option><option>ตุลาคม</option><option>พฤศจิกายน</option><option>ธันวาคม</option>
+                                    </select>
+                                </th>
+                                <th rowspan="2" class="bg-purple-50">รวมเวลา<br>(ชม.)</th>
+                            </tr>
+                            <tr class="text-[9px] bg-slate-50">
+                                <th>ส1</th><th>ส2</th><th>ส3</th><th>ส4</th><th>ส5</th>
+                                <th>ส1</th><th>ส2</th><th>ส3</th><th>ส4</th><th>ส5</th>
+                                <th>ส1</th><th>ส2</th><th>ส3</th><th>ส4</th><th>ส5</th>
+                                <th>ส1</th><th>ส2</th><th>ส3</th><th>ส4</th><th>ส5</th>
+                                <th>ส1</th><th>ส2</th><th>ส3</th><th>ส4</th><th>ส5</th>
+                            </tr>
+                            <tr class="bg-slate-100 font-bold text-xs">
+                                <th colspan="2" class="text-right text-[11px] py-1">เวลาเต็ม(ชม.):</th>
+                                <script>
+                                    for(let w=1; w<=25; w++) {
+                                        document.write('<th><input type="number" class="w-full border border-gray-300 bg-white rounded p-0 text-center text-[10px] font-bold text-purple-800 attendance-max-hour" value="0" oninput="calcAllAttendanceRows()"></th>');
+                                    }
+                                </script>
+                                <th id="attendance-grand-max" class="text-purple-800 text-[11px]">0</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 flex space-x-2 no-print">
+                    <button onclick="addNewStudentRowGlobal()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ เพิ่มนักศึกษา</button>
+                </div>
+
+                <div class="text-center mt-12 no-print flex flex-wrap justify-center gap-4">
+                    <button onclick="customPrint()" class="bg-purple-800 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-purple-900 transition">เปิดหน้าต่างพิมพ์</button>
+                    <button onclick="downloadPDFDirect()" class="bg-amber-500 text-slate-900 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-amber-600 transition">ดาวน์โหลด PDF ลงเครื่อง</button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="no-print w-full mt-10 py-6 bg-white border-t border-gray-200 shadow-inner">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm font-bold text-gray-700 mb-1">
+                © Copyright <span class="text-purple-700">iLanding</span> by ศุภวิชญ์ จิตธรรมมา <span class="text-purple-400 mx-1">|</span> Designed by อารยา วิชาสวัสดิ์
+            </p>
+            <p class="text-xs text-gray-500">
+                ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอสุวรรณคูหา สำนักงานส่งเสริมการเรียนรู้ประจำจังหวัดหนองบัวลำภู
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const groups = [
+            "ศูนย์การเรียนรู้ระดับตำบลสุวรรณคูหา1","ศูนย์การเรียนรู้ระดับตำบลสุวรรณคูหา2","ศูนย์การเรียนรู้ระดับตำบลสุวรรณคูหา3","ศูนย์การเรียนรู้ชุมชนตำบลสุวรรณคูหา",
+            "ศูนย์การเรียนรู้ระดับตำบลดงมะไฟ1","ศูนย์การเรียนรู้ระดับตำบลดงมะไฟ2","ศูนย์การเรียนรู้ระดับตำบลดงมะไฟ3","ศูนย์การเรียนรู้ชุมชนตำบลดงมะไฟ",
+            "ศูนย์การเรียนรู้ระดับตำบลบ้านโคก1","ศูนย์การเรียนรู้ระดับตำบลบ้านโคก2",
+            "ศูนย์การเรียนรู้ระดับตำบลนาดี1","ศูนย์การเรียนรู้ระดับตำบลนาดี2","ศูนย์การเรียนรู้ระดับตำบลนาดี3","ศูนย์การเรียนรู้ระดับตำบลนาดี4","ศูนย์การเรียนรู้ระดับตำบลนาดี5",
+            "ศูนย์การเรียนรู้ระดับตำบลนาด่าน1","ศูนย์การเรียนรู้ระดับตำบลนาด่าน2","ศูนย์การเรียนรู้ชุมชนตำบลนาด่าน",
+            "ศูนย์การเรียนรู้ระดับตำบลบุญทัน1","ศูนย์การเรียนรู้ระดับตำบลบุญทัน2","ศูนย์การเรียนรู้ชุมชนตำบลบุญทัน",
+            "ศูนย์การเรียนรู้ระดับตำบลนาสี1","ศูนย์การเรียนรู้ระดับตำบลนาสี2","ศูนย์การเรียนรู้ระดับตำบลนาสี3","ศูนย์การเรียนรู้ระดับตำบลนาสี4","ศูนย์การเรียนรู้ชุมชนตำบลนาสี",
+            "ศูนย์การเรียนรู้ระดับตำบลกุดผึ้ง1","ศูนย์การเรียนรู้ระดับตำบลกุดผึ้ง2","ศูนย์การเรียนรู้ระดับตำบลกุดผึ้ง3","ศูนย์การเรียนรู้ชุมชนตำบลกุดผึ้ง",
+            "นักศึกษาพิการ"
+        ];
+
+        const teachers = [
+            "นายศุภวิชญ์ จิตธรรมมา","นางสาวอารยา วิชาสวัสดิ์","นางสาวอิสริยาภรณ์ เหี้ยมเหิน","นางสาวชุลีพร สมภูมิ","นายนรินทร์ คันธี","นางปรียารัตน์ ยาพันธ์",
+            "นางสาวจุฑามาศ พลนางาม","นางสาวรัตนาภรณ์ หลาวเหล็ก","นายสมยง มะณีโชติ","นางอมรา ใหมบิดา","นายวีรพล ทับพิมล","นางสาวนรินทรา บุญหนา",
+            "นายนัฐศักดิ์ สีไชย์","นางอัครอนงค์ สมทอง","นายจตุพนธ์ ประครองญาติ","นายอนพัช ปัญญาพุทธิกุล","นายวชรพล เพียเทพ","นายธนภัทร ภูมิสายดอน",
+            "นางสาวหทัยรัตน์ พิมพ์จ่อง","นายอัฒชา คำสีทา","นางสาววงค์เดือน พันธ์ลี","นายทวีวิทย์ ชาวดอน","นางศุภัชญา พรชัย","นายทรงศักดิ์ พรชัย",
+            "นายพิสิษฐ โคตุราช","นางสุภาวดี ไชยโพธิ์","นายอภิชาติ สุุทธิโสม","นางสุวรรณา สุทธิโสม","นางสาวนิรมล กรมทำมา","นางยุพรัตน์ ทุมวัน",
+            "นายนิพนธ์ บำรุงภักดี","นายพิชัยรัตน์ วงศ์อนันท์","นายศักดินนท์ ชัยภูมิ","นางฐิติพรรณ ใหม่วงษ์"
+        ];
+
+        const registrars = ["นายศุภวิชญ์ จิตธรรมมา","นางสาวอารยา วิชาสวัสดิ์"];
+
+        const moralVirtues = [
+            { id: 1, title: "กลุ่มที่ 1 คุณธรรมเพื่อการพัฒนาตนเอง", items: ["ความสะอาด", "ความสุภาพ", "กตัญญูกตเวที"] },
+            { id: 2, title: "กลุ่มที่ 2 คุณธรรมเพื่อการพัฒนาการทำงาน", items: ["ขยัน", "ประหยัด", "ซื่อสัตย์สุจริต"] },
+            { id: 3, title: "กลุ่มที่ 3 คุณธรรมเพื่อการพัฒนาการอยู่ร่วมกันในสังคม", items: ["สามัคคี", "มีน้ำใจ", "มีวินัย"] },
+            { id: 4, title: "กลุ่มที่ 4 คุณธรรมเพื่อการพัฒนาประเทศ", items: ["รักชาติ ศาสน์ กษัตริย์", "ประชาธิปไตย"] }
+        ];
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            document.getElementById('btn-' + tabName).classList.add('active');
+        }
+
+        function initSelects() {
+            const groupSel = document.getElementById('group-select');
+            groups.forEach(g => groupSel.add(new Option(g, g)));
+            const teacherSel = document.getElementById('teacher-select');
+            teachers.forEach(t => teacherSel.add(new Option(t, t)));
+            const regSel = document.getElementById('registrar-select');
+            registrars.forEach(r => regSel.add(new Option(r, r)));
+        }
+
+        let coverSubjectCount = 0;
+        function addSubjectRowCover() {
+            if(coverSubjectCount >= 10) return alert("เพิ่มวิชาได้สูงสุด 10 รายวิชา");
+            coverSubjectCount++;
+            const tbody = document.querySelector('#cover-subject-table tbody');
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><input type="text" class="w-full text-left" placeholder="ชื่อวิชา/รหัส"></td>
+                <td><input type="number" class="w-10"></td><td><input type="number" class="w-10"></td>
+                <td><input type="number" class="w-10"></td><td><input type="number" class="w-10"></td>
+                <td><input type="number" class="w-8"></td><td><input type="number" class="w-8"></td>
+                <td><input type="number" class="w-8"></td><td><input type="number" class="w-8"></td>
+                <td><input type="number" class="w-8"></td><td><input type="number" class="w-8"></td>
+                <td><input type="number" class="w-8"></td><td><input type="number" class="w-8"></td>
+                <td class="no-print"><input type="number" class="w-8 text-red-500"></td>
+            `;
+        }
+
+        function syncStudentName(inputEl, rowIdx) {
+            const nameVal = inputEl.value;
+            const gradeInput = document.querySelector(`#main-grade-table tbody tr:nth-child(${rowIdx}) input[type="text"]`);
+            if (gradeInput && gradeInput !== inputEl) gradeInput.value = nameVal;
+            
+            for(let g=1; g<=4; g++) {
+                const moralInput = document.querySelector(`#moral-table-${g} tbody tr:nth-child(${rowIdx}) input[type="text"]`);
+                if (moralInput && moralInput !== inputEl) moralInput.value = nameVal;
+            }
+            
+            const summaryNameCell = document.querySelector(`#moral-summary-table tbody tr:nth-child(${rowIdx}) td:nth-child(2)`);
+            if (summaryNameCell) summaryNameCell.innerText = nameVal || "-";
+            
+            const attInput = document.querySelector(`#attendance-table tbody tr:nth-child(${rowIdx}) input.student-name-att`);
+            if (attInput && attInput !== inputEl) attInput.value = nameVal;
+        }
+
+        function addNewStudentRowGlobal() {
+            const nextRowIdx = document.querySelectorAll('#main-grade-table tbody tr').length + 1;
+            
+            const gradeTbody = document.querySelector('#main-grade-table tbody');
+            const gRow = gradeTbody.insertRow();
+            gRow.innerHTML = `
+                <td>${nextRowIdx}</td>
+                <td><input type="text" class="w-full text-left name-column" oninput="syncStudentName(this, ${nextRowIdx})" placeholder="ชื่อ-นามสกุล"></td>
+                <td><input type="number" class="w-12 mid" onchange="calcGrade(this)"></td>
+                <td><input type="number" class="w-12 mid" onchange="calcGrade(this)"></td>
+                <td><input type="number" class="w-12 mid" onchange="calcGrade(this)"></td>
+                <td><input type="number" class="w-12 mid" onchange="calcGrade(this)"></td>
+                <td><input type="number" class="w-12 mid" onchange="calcGrade(this)"></td>
+                <td><input type="number" class="w-12 mid" onchange="calcGrade(this)"></td>
+                <td class="mid-total font-bold">0</td>
+                <td><input type="number" class="w-12 fin" onchange="calcGrade(this)"></td>
+                <td class="all-total font-bold text-purple-700">0</td>
+                <td class="grade font-bold">0</td>
+                <td><input type="number" class="w-12"></td>
+            `;
+
+            moralVirtues.forEach(group => {
+                const mTbody = document.querySelector(`#moral-table-${group.id} tbody`);
+                const mRow = mTbody.insertRow();
+                let cells = `<td>${nextRowIdx}</td><td><input type="text" class="w-full text-left name-column" oninput="syncStudentName(this, ${nextRowIdx})" placeholder="ชื่อ-นามสกุล"></td>`;
+                group.items.forEach((item, itemIdx) => {
+                    cells += `
+                        <td><input type="radio" class="cursor-pointer" name="m-${group.id}-${nextRowIdx}-${itemIdx}" value="4" onchange="calcMoralSummary(${nextRowIdx})"></td>
+                        <td><input type="radio" class="cursor-pointer" name="m-${group.id}-${nextRowIdx}-${itemIdx}" value="3" onchange="calcMoralSummary(${nextRowIdx})"></td>
+                        <td><input type="radio" class="cursor-pointer" name="m-${group.id}-${nextRowIdx}-${itemIdx}" value="2" onchange="calcMoralSummary(${nextRowIdx})"></td>
+                        <td><input type="radio" class="cursor-pointer" name="m-${group.id}-${nextRowIdx}-${itemIdx}" value="1" onchange="calcMoralSummary(${nextRowIdx})"></td>
+                        <td><input type="number" class="w-12 text-center text-[10px] moral-pct-input" placeholder="%" oninput="calcMoralSummary(${nextRowIdx})"></td>
+                    `;
+                });
+                mRow.innerHTML = cells;
+            });
+
+            const summaryTbody = document.querySelector('#moral-summary-table tbody');
+            const sRow = summaryTbody.insertRow();
+            sRow.innerHTML = `
+                <td>${nextRowIdx}</td>
+                <td class="text-left font-medium name-column">-</td>
+                <td id="r-idx-${nextRowIdx}-g1-txt">-</td><td id="r-idx-${nextRowIdx}-g1-pct">0%</td>
+                <td id="r-idx-${nextRowIdx}-g2-txt">-</td><td id="r-idx-${nextRowIdx}-g2-pct">0%</td>
+                <td id="r-idx-${nextRowIdx}-g3-txt">-</td><td id="r-idx-${nextRowIdx}-g3-pct">0%</td>
+                <td id="r-idx-${nextRowIdx}-g4-txt">-</td><td id="r-idx-${nextRowIdx}-g4-pct">0%</td>
+                <td id="r-idx-${nextRowIdx}-total-txt" class="bg-purple-50 font-bold text-purple-900">-</td><td id="r-idx-${nextRowIdx}-total-pct" class="bg-purple-50 font-bold text-purple-900">0%</td>
+            `;
+
+            const attendanceTbody = document.querySelector('#attendance-table tbody');
+            const aRow = attendanceTbody.insertRow();
+            let attCells = `<td>${nextRowIdx}</td><td><input type="text" class="w-full text-left name-column student-name-att" oninput="syncStudentName(this, ${nextRowIdx})" placeholder="ชื่อ-นามสกุล"></td>`;
+            for(let w=1; w<=25; w++) {
+                attCells += `<td><input type="checkbox" class="cursor-pointer" onchange="calcAttendanceRow(this)"></td>`;
+            }
+            attCells += `<td class="font-bold text-purple-800 row-att-total">0</td>`;
+            aRow.innerHTML = attCells;
+        }
+
+        function calcGrade(el) {
+            const row = el.closest('tr');
+            const mids = row.querySelectorAll('.mid');
+            let midSum = 0;
+            mids.forEach(i => midSum += Number(i.value) || 0);
+            row.querySelector('.mid-total').innerText = midSum;
+
+            const fin = Number(row.querySelector('.fin').value) || 0;
+            const total = midSum + fin;
+            row.querySelector('.all-total').innerText = total;
+
+            let g = 0;
+            if(total >= 80) g = 4;
+            else if(total >= 75) g = 3.5;
+            else if(total >= 70) g = 3;
+            else if(total >= 65) g = 2.5;
+            else if(total >= 60) g = 2;
+            else if(total >= 55) g = 1.5;
+            else if(total >= 50) g = 1;
+            else g = 0;
+            row.querySelector('.grade').innerText = g;
+        }
+
+        function nextSubject() {
+            if(confirm("ต้องการล้างตารางเพื่อกรอกวิชาต่อไปหรือไม่?")) {
+                document.querySelectorAll('#main-grade-table tbody input[type="number"]').forEach(el => el.value = "");
+                document.querySelectorAll('.mid-total, .all-total, .grade').forEach(el => el.innerText = "0");
+                window.scrollTo(0,0);
+            }
+        }
+
+        function calcMoralSummary(rowIdx) {
+            let overallPctSum = 0;
+            let overallValidCount = 0;
+
+            for(let g=1; g<=4; g++) {
+                const table = document.getElementById(`moral-table-${g}`);
+                const row = table.querySelector(`tbody tr:nth-child(${rowIdx})`);
+                if(!row) continue;
+
+                const pctInputs = row.querySelectorAll('.moral-pct-input');
+                let itemPctSum = 0;
+                let itemCount = 0;
+
+                for(let i=0; i<pctInputs.length; i++) {
+                    let pctValue = parseInt(pctInputs[i].value);
+                    if (!isNaN(pctValue)) {
+                        itemPctSum += pctValue;
+                        itemCount++;
+                    }
+                }
+
+                let avgPct = itemCount > 0 ? Math.round(itemPctSum / itemCount) : 0;
+                
+                let resultText = "-";
+                if(itemCount > 0) {
+                    if (avgPct >= 90) resultText = "ดีมาก";
+                    else if (avgPct >= 70) resultText = "ดี";
+                    else if (avgPct >= 50) resultText = "พอใช้";
+                    else resultText = "ปรับปรุง";
+                }
+
+                if(document.getElementById(`r-idx-${rowIdx}-g${g}-txt`)) {
+                    document.getElementById(`r-idx-${rowIdx}-g${g}-txt`).innerText = resultText;
+                    document.getElementById(`r-idx-${rowIdx}-g${g}-pct`).innerText = avgPct + "%";
+                }
+
+                if (itemCount > 0) {
+                    overallPctSum += avgPct;
+                    overallValidCount++;
+                }
+            }
+
+            if (overallValidCount > 0) {
+                let finalAvgPct = Math.round(overallPctSum / overallValidCount);
+                let finalText = "-";
+                if(finalAvgPct >= 90) finalText = "ดีมาก";
+                else if(finalAvgPct >= 70) finalText = "ดี";
+                else if(finalAvgPct >= 50) finalText = "พอใช้";
+                else finalText = "ปรับปรุง";
+
+                document.getElementById(`r-idx-${rowIdx}-total-txt`).innerText = finalText;
+                document.getElementById(`r-idx-${rowIdx}-total-pct`).innerText = finalAvgPct + "%";
+            } else {
+                document.getElementById(`r-idx-${rowIdx}-total-txt`).innerText = "-";
+                document.getElementById(`r-idx-${rowIdx}-total-pct`).innerText = "0%";
+            }
+
+            calcClassMoralSummary();
+        }
+
+        function calcClassMoralSummary() {
+            const totalRows = document.querySelectorAll('#moral-summary-table tbody tr').length;
+            if(totalRows === 0) return;
+
+            const columns = ['g1', 'g2', 'g3', 'g4', 'total'];
+
+            columns.forEach(col => {
+                let pctTotal = 0;
+                let validCount = 0;
+
+                for(let r=1; r<=totalRows; r++) {
+                    const txt = document.getElementById(`r-idx-${r}-${col}-txt`).innerText;
+                    const pctText = document.getElementById(`r-idx-${r}-${col}-pct`).innerText;
+                    const pct = parseInt(pctText) || 0;
+                    
+                    if(txt !== "-") {
+                        pctTotal += pct;
+                        validCount++;
+                    }
+                }
+
+                if(validCount > 0) {
+                    let classAvgPct = Math.round(pctTotal / validCount);
+                    
+                    let classText = "-";
+                    if(classAvgPct >= 90) classText = "ดีมาก";
+                    else if(classAvgPct >= 70) classText = "ดี";
+                    else if(classAvgPct >= 50) classText = "พอใช้";
+                    else classText = "ปรับปรุง";
+
+                    document.getElementById(`summary-${col}-text`).innerText = classText;
+                    document.getElementById(`summary-${col}-pct`).innerText = classAvgPct + "%";
+                } else {
+                    document.getElementById(`summary-${col}-text`).innerText = "-";
+                    document.getElementById(`summary-${col}-pct`).innerText = "0%";
+                }
+            });
+        }
+
+        function calcAttendanceRow(elementInRow) {
+            const row = elementInRow.closest('tr');
+            const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+            const maxInputs = document.querySelectorAll('.attendance-max-hour'); 
+            let sumHours = 0;
+            
+            checkboxes.forEach((cb, index) => {
+                if(cb.checked) {
+                    sumHours += Number(maxInputs[index].value) || 0;
+                }
+            });
+            row.querySelector('.row-att-total').innerText = sumHours;
+        }
+
+        function calcAllAttendanceRows() {
+            const maxInputs = document.querySelectorAll('.attendance-max-hour');
+            let grandMax = 0;
+            maxInputs.forEach(input => grandMax += Number(input.value) || 0);
+            document.getElementById('attendance-grand-max').innerText = grandMax;
+            
+            const studentRows = document.querySelectorAll('#attendance-table tbody tr');
+            studentRows.forEach(row => {
+                const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+                if (checkboxes.length > 0) {
+                    calcAttendanceRow(checkboxes[0]);
+                }
+            });
+        }
+
+        function renderMoralSections() {
+            const container = document.getElementById('moral-sections-container');
+            moralVirtues.forEach((group) => {
+                let section = document.createElement('div');
+                section.className = "mb-8 print-overflow-visible";
+                const totalCols = 2 + (group.items.length * 5); 
+
+                section.innerHTML = `
+                    <div class="overflow-x-auto print-overflow-visible">
+                        <table id="moral-table-${group.id}">
+                            <colgroup>
+                                <col style="width: 4%;">
+                                <col style="width: 25%;">
+                                <col style="width: 4%;"><col style="width: 4%;"><col style="width: 4%;"><col style="width: 4%;"><col style="width: 6%;">
+                                <col style="width: 4%;"><col style="width: 4%;"><col style="width: 4%;"><col style="width: 4%;"><col style="width: 6%;">
+                                <col style="width: 4%;"><col style="width: 4%;"><col style="width: 4%;"><col style="width: 4%;"><col style="width: 6%;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th colspan="${totalCols}" class="header-cell text-left">
+                                        <h3 class="font-bold text-lg text-purple-formal">${group.title}</h3>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th rowspan="2">ที่</th>
+                                    <th rowspan="2">ชื่อ-นามสกุล</th>
+                                    ${group.items.map(item => `<th colspan="5">${item}</th>`).join('')}
+                                </tr>
+                                <tr>
+                                    ${group.items.map(() => `<th>ดีมาก</th><th>ดี</th><th>พอใช้</th><th>ปรับปรุง</th><th>%</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+
+        function syncInputValuesForPrint() {
+            document.querySelectorAll('input').forEach(input => {
+                if(input.type === 'radio' || input.type === 'checkbox') {
+                    if(input.checked) input.setAttribute('checked', 'checked');
+                    else input.removeAttribute('checked');
+                } else {
+                    input.setAttribute('value', input.value);
+                }
+            });
+            document.querySelectorAll('select').forEach(select => {
+                Array.from(select.options).forEach(opt => {
+                    if(opt.selected) opt.setAttribute('selected', 'selected');
+                    else opt.removeAttribute('selected');
+                });
+            });
+        }
+
+        function replaceInputsForPrint() {
+            document.querySelectorAll('.temp-print-element').forEach(el => el.remove()); 
+            const inputs = document.querySelectorAll('#capture-area input[type="checkbox"], #capture-area input[type="radio"]');
+            inputs.forEach(input => {
+                input.style.display = 'none'; 
+                const span = document.createElement('span');
+                span.className = 'temp-print-element';
+                span.style.display = 'inline-block';
+                span.style.width = '12px';
+                span.style.height = '12px';
+                span.style.lineHeight = '12px';
+                span.style.textAlign = 'center';
+                span.style.fontSize = '10px';
+                span.style.fontWeight = 'bold';
+                span.style.color = '#000';
+                span.style.border = '1px solid #000';
+                span.style.backgroundColor = '#fff';
+                
+                if(input.type === 'radio') {
+                    span.style.borderRadius = '50%'; 
+                }
+                
+                if(input.checked) {
+                    span.innerHTML = '✓';
+                } else {
+                    span.innerHTML = '';
+                }
+                
+                input.parentNode.insertBefore(span, input.nextSibling);
+            });
+        }
+
+        function restoreInputsAfterPrint() {
+            document.querySelectorAll('.temp-print-element').forEach(el => el.remove());
+            const inputs = document.querySelectorAll('#capture-area input[type="checkbox"], #capture-area input[type="radio"]');
+            inputs.forEach(input => {
+                input.style.display = ''; 
+            });
+        }
+
+        function customPrint() {
+            const activeSection = document.querySelector('.tab-content:not(.hidden)');
+            const isLandscape = (activeSection.id !== "tab-cover");
+
+            let style = document.createElement('style');
+            style.id = 'print-orientation';
+            style.innerHTML = `@page { size: A4 ${isLandscape ? 'landscape' : 'portrait'}; margin: 5mm; }`;
+            document.head.appendChild(style);
+
+            syncInputValuesForPrint();
+            replaceInputsForPrint(); 
+            
+            const overflowDivs = document.querySelectorAll('.print-overflow-visible');
+            overflowDivs.forEach(div => {
+                div.classList.remove('overflow-x-auto');
+                div.style.overflow = 'visible';
+            });
+            
+            window.print();
+            
+            overflowDivs.forEach(div => {
+                div.classList.add('overflow-x-auto');
+                div.style.overflow = '';
+            });
+            restoreInputsAfterPrint(); 
+            
+            document.head.removeChild(style);
+        }
+
+        async function downloadPDFDirect() {
+            const activeSection = document.querySelector('.tab-content:not(.hidden)');
+            if (!activeSection) return;
+
+            const btn = document.querySelector('.tab-content:not(.hidden) button[onclick="downloadPDFDirect()"]');
+            const originalText = btn ? btn.innerText : "";
+            if (btn) { btn.innerText = "กำลังสร้าง PDF..."; btn.disabled = true; }
+
+            const containerArea = document.getElementById('capture-area');
+            
+            const originalStyle = containerArea.style.cssText;
+            const originalClasses = containerArea.className;
+
+            try {
+                syncInputValuesForPrint();
+                replaceInputsForPrint(); 
+
+                document.body.classList.add('html2pdf-pdf-mode');
+                
+                containerArea.className = "print-container";
+                containerArea.style.cssText = `
+                    width: 100% !important; 
+                    max-width: 100% !important; 
+                    margin: 0 !important; 
+                    padding: 10px !important; 
+                    background: white !important;
+                `;
+
+                const tables = containerArea.querySelectorAll('table');
+                tables.forEach(t => {
+                    t.style.width = '100% !important';
+                    t.style.tableLayout = 'fixed';
+                });
+
+                const isLandscape = (activeSection.id !== "tab-cover");
+                const opt = {
+                    margin: [5, 5, 5, 5],
+                    filename: 'E-สกร4_' + new Date().getTime() + '.pdf',
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: document.documentElement.offsetWidth
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                };
+
+                await html2pdf().set(opt).from(containerArea).save();
+
+            } catch (err) {
+                console.error(err);
+                alert("เกิดข้อผิดพลาดในการสร้างไฟล์");
+            } finally {
+                document.body.classList.remove('html2pdf-pdf-mode');
+                containerArea.className = originalClasses;
+                containerArea.style.cssText = originalStyle;
+                restoreInputsAfterPrint();
+                if (btn) { btn.innerText = originalText; btn.disabled = false; }
+            }
+        }
+
+        window.onload = () => {
+            initSelects();
+            renderMoralSections();
+            for(let i=0; i<3; i++) addSubjectRowCover();
+            for(let i=0; i<10; i++) addNewStudentRowGlobal();
+            calcAllAttendanceRows();
+        };
+    </script>
+</body>
+</html>
